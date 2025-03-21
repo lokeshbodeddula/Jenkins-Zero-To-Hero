@@ -1,4 +1,4 @@
-FROM adoptopenjdk/openjdk17:alpine-jre
+FROM eclipse-temurin:17-jdk-alpine
 
 ARG artifact=target/spring-boot-web.jar
 
