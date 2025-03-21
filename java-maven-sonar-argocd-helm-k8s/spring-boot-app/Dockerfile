@@ -1,3 +1,4 @@
+
 # Use the correct base image for Java 17
 FROM eclipse-temurin:17-jre-alpine
 
