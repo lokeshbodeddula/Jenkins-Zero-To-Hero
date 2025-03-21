@@ -1,12 +1,14 @@
-
 # Use the correct base image for Java 17
 FROM eclipse-temurin:17-jre-alpine
 
 # Set working directory
 WORKDIR /opt/app
 
-# Copy the jar file from target directory
-COPY target/spring-boot-web.jar app.jar  # Fix path issue
+# Copy the JAR file from the target directory
+COPY target/spring-boot-web.jar app.jar  # Ensure the JAR path is correct
 
-# Run the app with Java
+# Expose the port (adjust based on your application)
+EXPOSE 8080
+
+# Run the application with Java
 ENTRYPOINT ["java", "-jar", "app.jar"]
