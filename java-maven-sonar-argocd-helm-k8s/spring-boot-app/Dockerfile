@@ -1,8 +1,6 @@
 FROM eclipse-temurin:17-jre-alpine
 
 WORKDIR /opt/app
-
-ARG artifact=target/spring-boot-web.jar
-COPY ${artifact} app.jar
+COPY target/spring-boot-web.jar app.jar  # Fix path issue
 
 ENTRYPOINT ["java", "-jar", "app.jar"]
