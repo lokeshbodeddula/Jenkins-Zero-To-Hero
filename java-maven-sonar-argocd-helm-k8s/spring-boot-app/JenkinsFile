@@ -2,7 +2,7 @@ pipeline {
   agent {
     docker {
       image 'lokesh579/my-custom-dind-java:latest' // Use your custom Docker image
-      args '--privileged -v /var/run/docker.sock:/var/run/docker.sock'
+      args '--privileged -v /var/run/docker.sock:/var/run/docker.sock --user root'
     }
   }
   environment {
