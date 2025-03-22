@@ -1,9 +1,12 @@
 pipeline {
   agent {
     docker {
-      image 'lokesh579/my-custom-dind-java:latest' // Use your Docker Hub image
+      image 'lokesh579/my-custom-dind-java:latest' // Use your custom Docker image
       args '--privileged -v /var/run/docker.sock:/var/run/docker.sock'
     }
+  }
+  environment {
+    DOCKER_CONFIG = '/tmp/.docker' // Set Docker config directory to a writable location
   }
   stages {
     stage('Check Java Version') {
@@ -32,6 +35,11 @@ pipeline {
         }
       }
     }
+    stage('Prepare Docker Config') {
+      steps {
+        sh 'mkdir -p /tmp/.docker && chmod 777 /tmp/.docker'
+      }
+    }
     stage('Build and Push Docker Image') {
       environment {
         DOCKER_IMAGE = "lokesh579/ultimate-cicd:${BUILD_NUMBER}"
@@ -39,10 +47,10 @@ pipeline {
       }
       steps {
         script {
-          sh 'cd java-maven-sonar-argocd-helm-k8s/spring-boot-app && docker build -t ${DOCKER_IMAGE} .'
+          sh 'cd java-maven-sonar-argocd-helm-k8s/spring-boot-app && docker --config /tmp/.docker build -t ${DOCKER_IMAGE} .'
           withCredentials([usernamePassword(credentialsId: 'docker-cred', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-            sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
-            sh 'docker push ${DOCKER_IMAGE}'
+            sh 'echo $DOCKER_PASS | docker --config /tmp/.docker login -u $DOCKER_USER --password-stdin'
+            sh 'docker --config /tmp/.docker push ${DOCKER_IMAGE}'
           }
         }
       }
