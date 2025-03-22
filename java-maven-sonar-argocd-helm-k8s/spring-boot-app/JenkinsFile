@@ -2,7 +2,7 @@ pipeline {
   agent {
     docker {
       image 'lokesh579/my-custom-dind-java:latest' // Use your custom Docker image
-      args '--privileged -v /var/run/docker.sock:/var/run/docker.sock --user root'
+      args '--privileged -v /var/run/docker.sock:/var/run/docker.sock --user root' // Added --user root
     }
   }
   environment {
@@ -37,7 +37,7 @@ pipeline {
     }
     stage('Prepare Docker Config') {
       steps {
-        sh 'mkdir -p /tmp/.docker && chmod 777 /tmp/.docker'
+        sh 'mkdir -p /tmp/.docker && chmod 777 /tmp/.docker' // Create and set permissions for Docker config directory
       }
     }
     stage('Build and Push Docker Image') {
@@ -47,10 +47,10 @@ pipeline {
       }
       steps {
         script {
-          sh 'cd java-maven-sonar-argocd-helm-k8s/spring-boot-app && docker --config /tmp/.docker build -t ${DOCKER_IMAGE} .'
+          sh 'cd java-maven-sonar-argocd-helm-k8s/spring-boot-app && docker --config /tmp/.docker build -t ${DOCKER_IMAGE} .' // Use --config /tmp/.docker
           withCredentials([usernamePassword(credentialsId: 'docker-cred', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-            sh 'echo $DOCKER_PASS | docker --config /tmp/.docker login -u $DOCKER_USER --password-stdin'
-            sh 'docker --config /tmp/.docker push ${DOCKER_IMAGE}'
+            sh 'echo $DOCKER_PASS | docker --config /tmp/.docker login -u $DOCKER_USER --password-stdin' // Use --config /tmp/.docker
+            sh 'docker --config /tmp/.docker push ${DOCKER_IMAGE}' // Use --config /tmp/.docker
           }
         }
       }
@@ -61,16 +61,18 @@ pipeline {
         GIT_USER_NAME = "lokeshbodeddula"
       }
       steps {
-        withCredentials([string(credentialsId: 'github', variable: 'GITHUB_TOKEN')]) {
-          sh '''
-            git config user.email "115606390+lokeshbodeddula@users.noreply.github.com"
-            git config user.name "lokeshbodeddula"
-            BUILD_NUMBER=${BUILD_NUMBER}
-            sed -i "s/replaceImageTag/${BUILD_NUMBER}/g" java-maven-sonar-argocd-helm-k8s/spring-boot-app-manifests/deployment.yml
-            git add java-maven-sonar-argocd-helm-k8s/spring-boot-app-manifests/deployment.yml
-            git commit -m "Update deployment image to version ${BUILD_NUMBER}"
-            git push https://${GITHUB_TOKEN}@github.com/${GIT_USER_NAME}/${GIT_REPO_NAME} HEAD:main
-          '''
+        dir('java-maven-sonar-argocd-helm-k8s/spring-boot-app') { // Ensure Git commands run in the correct directory
+          withCredentials([string(credentialsId: 'github', variable: 'GITHUB_TOKEN')]) {
+            sh '''
+              git config user.email "115606390+lokeshbodeddula@users.noreply.github.com"
+              git config user.name "lokeshbodeddula"
+              BUILD_NUMBER=${BUILD_NUMBER}
+              sed -i "s/replaceImageTag/${BUILD_NUMBER}/g" spring-boot-app-manifests/deployment.yml
+              git add spring-boot-app-manifests/deployment.yml
+              git commit -m "Update deployment image to version ${BUILD_NUMBER}"
+              git push https://${GITHUB_TOKEN}@github.com/${GIT_USER_NAME}/${GIT_REPO_NAME} HEAD:main
+            '''
+          }
         }
       }
     }
