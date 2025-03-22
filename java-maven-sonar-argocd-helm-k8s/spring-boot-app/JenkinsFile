@@ -1,8 +1,8 @@
 pipeline {
   agent {
     docker {
-      image 'docker:dind' // Use Docker-in-Docker image
-      args '--privileged -v /var/run/docker.sock:/var/run/docker.sock' // Mount Docker socket
+      image 'lokesh579/my-custom-dind-java:latest' // Use your Docker Hub image
+      args '--privileged -v /var/run/docker.sock:/var/run/docker.sock'
     }
   }
   stages {
