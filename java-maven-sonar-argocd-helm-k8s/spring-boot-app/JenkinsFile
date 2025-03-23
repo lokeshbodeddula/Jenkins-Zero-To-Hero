@@ -82,7 +82,7 @@ pipeline {
           dir("${WORKSPACE}/java-maven-sonar-argocd-helm-k8s/spring-boot-app") {
             withCredentials([string(credentialsId: 'github', variable: 'GITHUB_TOKEN')]) {
               sh '''
-                # ✅ Ensure .git directory exists
+                # ✅ Check if .git directory exists
                 if [ -d ".git" ]; then
                     echo "Repository exists. Resetting..."
                     git reset --hard  # Reset local changes
