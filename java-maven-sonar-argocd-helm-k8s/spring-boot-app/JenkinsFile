@@ -82,21 +82,24 @@ pipeline {
           dir("${WORKSPACE}/java-maven-sonar-argocd-helm-k8s/spring-boot-app") {
             withCredentials([string(credentialsId: 'github', variable: 'GITHUB_TOKEN')]) {
               sh '''
-                # Ensure we are in a Git repo, otherwise clone
-                if [ ! -d ".git" ]; then
-                    echo "Git repository missing. Cloning..."
+                # ✅ FIX: Check if .git directory exists before cloning
+                if [ -d ".git" ]; then
+                    echo "Git repository already exists. Fetching latest changes..."
+                    git reset --hard  # Reset local changes
+                    git clean -fd  # Remove untracked files
+                    git pull origin main  # Fetch latest changes
+                else
+                    echo "Git repository missing. Cloning fresh..."
                     git clone https://github.com/${GIT_USER_NAME}/${GIT_REPO_NAME}.git .
                     cd java-maven-sonar-argocd-helm-k8s/spring-boot-app
-                else
-                    git reset --hard
-                    git pull origin main
                 fi
 
                 git config user.email "115606390+lokeshbodeddula@users.noreply.github.com"
                 git config user.name "lokeshbodeddula"
 
-                # Replace image tag in deployment file
+                # ✅ FIX: Ensure `deployment.yml` is updated correctly
                 sed -i "s/replaceImageTag/${BUILD_NUMBER}/g" spring-boot-app-manifests/deployment.yml
+
                 git add spring-boot-app-manifests/deployment.yml
                 git commit -m "Update deployment image to version ${BUILD_NUMBER}"
                 git push https://${GITHUB_TOKEN}@github.com/${GIT_USER_NAME}/${GIT_REPO_NAME} HEAD:main
