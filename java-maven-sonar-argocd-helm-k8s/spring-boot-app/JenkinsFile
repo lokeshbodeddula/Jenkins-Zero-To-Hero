@@ -71,45 +71,46 @@ pipeline {
         }
       }
     }
-stage('Update Deployment File') {
-    environment {
+
+    stage('Update Deployment File') {
+      environment {
         GIT_REPO_NAME = "Jenkins-Zero-To-Hero"
         GIT_USER_NAME = "lokeshbodeddula"
-    }
-    steps {
+      }
+      steps {
         script {
-            dir("${WORKSPACE}/java-maven-sonar-argocd-helm-k8s/spring-boot-app") {
-                withCredentials([string(credentialsId: 'github', variable: 'GITHUB_TOKEN')]) {
-                    sh '''
-                        # ✅ FIX: Check if .git directory exists before cloning
-                        if [ -d ".git" ]; then
-                            echo "Git repository already exists. Fetching latest changes..."
-                            git reset --hard  # Reset local changes
-                            git clean -fd  # Remove untracked files
-                            git fetch origin  # Fetch latest changes
-                            git checkout main  # Switch to main branch
-                            git pull origin main  # Pull latest changes
-                        else
-                            echo "Git repository missing. Cloning fresh..."
-                            git clone https://github.com/${GIT_USER_NAME}/${GIT_REPO_NAME}.git .
-                        fi
+          dir("${WORKSPACE}/java-maven-sonar-argocd-helm-k8s/spring-boot-app") {
+            withCredentials([string(credentialsId: 'github', variable: 'GITHUB_TOKEN')]) {
+              sh '''
+                # ✅ Ensure .git directory exists
+                if [ -d ".git" ]; then
+                    echo "Repository exists. Resetting..."
+                    git reset --hard  # Reset local changes
+                    git clean -fd  # Remove untracked files
+                    git fetch origin  # Fetch latest changes
+                    git checkout main  # Switch to main branch
+                    git pull origin main  # Pull latest changes
+                else
+                    echo "Cloning fresh repository..."
+                    git clone https://github.com/${GIT_USER_NAME}/${GIT_REPO_NAME}.git .
+                fi
 
-                        # Configure Git
-                        git config user.email "115606390+lokeshbodeddula@users.noreply.github.com"
-                        git config user.name "lokeshbodeddula"
+                # Configure Git
+                git config user.email "115606390+lokeshbodeddula@users.noreply.github.com"
+                git config user.name "lokeshbodeddula"
 
-                        # ✅ FIX: Ensure `deployment.yml` is updated correctly
-                        sed -i "s/replaceImageTag/${BUILD_NUMBER}/g" spring-boot-app-manifests/deployment.yml
+                # ✅ Update deployment.yml with new image tag
+                sed -i "s|image: lokesh579/ultimate-cicd:.*|image: lokesh579/ultimate-cicd:${BUILD_NUMBER}|" spring-boot-app-manifests/deployment.yml
 
-                        # Commit and push changes
-                        git add spring-boot-app-manifests/deployment.yml
-                        git commit -m "Update deployment image to version ${BUILD_NUMBER}"
-                        git push https://${GITHUB_TOKEN}@github.com/${GIT_USER_NAME}/${GIT_REPO_NAME}.git HEAD:main
-                    '''
-                }
+                # Commit and push changes
+                git add spring-boot-app-manifests/deployment.yml
+                git commit -m "Update deployment image to version ${BUILD_NUMBER}"
+                git push https://${GITHUB_TOKEN}@github.com/${GIT_USER_NAME}/${GIT_REPO_NAME}.git HEAD:main
+              '''
             }
+          }
         }
+      }
     }
-}
-}
+  }
 }
