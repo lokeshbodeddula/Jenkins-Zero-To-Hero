@@ -73,39 +73,36 @@ pipeline {
     }
 
     stage('Update Deployment File') {
-      environment {
-        GIT_REPO_NAME = "Jenkins-Zero-To-Hero"
-        GIT_USER_NAME = "lokeshbodeddula"
-      }
-      steps {
-        script {
-          dir("${WORKSPACE}/java-maven-sonar-argocd-helm-k8s/spring-boot-app") {
-            withCredentials([string(credentialsId: 'github', variable: 'GITHUB_TOKEN')]) {
-              sh '''
-                # ✅ FIX: Check if .git directory exists before cloning
-                if [ -d ".git" ]; then
-                    echo "Git repository already exists. Fetching latest changes..."
-                    git reset --hard  # Reset local changes
-                    git clean -fd  # Remove untracked files
-                    git pull origin main  # Fetch latest changes
-                else
-                    echo "Git repository missing. Cloning fresh..."
-                    git clone https://github.com/${GIT_USER_NAME}/${GIT_REPO_NAME}.git .
-                    cd java-maven-sonar-argocd-helm-k8s/spring-boot-app
-                fi
+  environment {
+    GIT_REPO_NAME = "Jenkins-Zero-To-Hero"
+    GIT_USER_NAME = "lokeshbodeddula"
+  }
+  steps {
+    script {
+      dir("${WORKSPACE}/java-maven-sonar-argocd-helm-k8s/spring-boot-app") {
+        withCredentials([string(credentialsId: 'github', variable: 'GITHUB_TOKEN')]) {
+          sh '''
+            # If .git exists, reset and pull; otherwise, clone fresh
+            if [ -d ".git" ]; then
+                echo "Git repository exists. Resetting and pulling latest changes..."
+                git reset --hard
+                git pull origin main
+            else
+                echo "Git repository missing or corrupted. Removing and cloning fresh..."
+                rm -rf * .git  # Remove old files and ensure directory is clean
+                git clone https://github.com/${GIT_USER_NAME}/${GIT_REPO_NAME}.git .
+                cd java-maven-sonar-argocd-helm-k8s/spring-boot-app
+            fi
 
-                git config user.email "115606390+lokeshbodeddula@users.noreply.github.com"
-                git config user.name "lokeshbodeddula"
+            git config user.email "115606390+lokeshbodeddula@users.noreply.github.com"
+            git config user.name "lokeshbodeddula"
 
-                # ✅ FIX: Ensure `deployment.yml` is updated correctly
-                sed -i "s/replaceImageTag/${BUILD_NUMBER}/g" spring-boot-app-manifests/deployment.yml
-
-                git add spring-boot-app-manifests/deployment.yml
-                git commit -m "Update deployment image to version ${BUILD_NUMBER}"
-                git push https://${GITHUB_TOKEN}@github.com/${GIT_USER_NAME}/${GIT_REPO_NAME} HEAD:main
-              '''
-            }
-          }
+            # Update image tag in deployment file
+            sed -i "s/replaceImageTag/${BUILD_NUMBER}/g" spring-boot-app-manifests/deployment.yml
+            git add spring-boot-app-manifests/deployment.yml
+            git commit -m "Update deployment image to version ${BUILD_NUMBER}"
+            git push https://${GITHUB_TOKEN}@github.com/${GIT_USER_NAME}/${GIT_REPO_NAME} HEAD:main
+          '''
         }
       }
     }
